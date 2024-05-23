@@ -11,6 +11,7 @@ app.use(
     cors({
         origin: [
             "http://localhost:3000",
+            "https://shine-store-seven.vercel.app"
             // Add your production frontend URL here
         ],
         credentials: true,
@@ -37,7 +38,6 @@ async function run() {
 
         const database = client.db('shineStore');
         const productsCollection = database.collection('products');
-
 
 
         app.get('/all-products', async (req, res) => {
