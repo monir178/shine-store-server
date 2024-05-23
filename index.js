@@ -38,27 +38,7 @@ async function run() {
         const database = client.db('shineStore');
         const productsCollection = database.collection('products');
 
-        // Function to set createdAt for all products
-        async function setCreatedAtForAllProducts() {
-            try {
-                const products = await productsCollection.find().toArray();
-                const currentDate = new Date();
 
-                for (const product of products) {
-                    await productsCollection.updateOne(
-                        { _id: product._id },
-                        { $set: { createdAt: currentDate } }
-                    );
-                }
-
-                console.log('Set createdAt for all products');
-            } catch (error) {
-                console.error('Error setting createdAt for all products:', error);
-            }
-        }
-
-        // Call the function to set createdAt for all products
-        await setCreatedAtForAllProducts();
 
         app.get('/all-products', async (req, res) => {
 
