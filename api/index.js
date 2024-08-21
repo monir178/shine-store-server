@@ -3,7 +3,8 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
-
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const app = express();
 
 // Remove "/" from your production URL if needed
@@ -38,6 +39,7 @@ async function run() {
 
         const database = client.db('shineStore');
         const productsCollection = database.collection('products');
+        const usersCollection = database.collection('users');
 
 
         app.get('/all-products', async (req, res) => {
@@ -49,6 +51,70 @@ async function run() {
                 res.status(500).json({ message: 'Error fetching flash sale products' });
             }
         })
+
+        //! Users Section
+
+        // User Registration
+        app.post("/register", async (req, res) => {
+            const { username, email, password } = req.body;
+
+            // Check if email already exists
+            const existingUser = await usersCollection.findOne({ email });
+            if (existingUser) {
+                return res.status(400).json({
+                    success: false,
+                    message: "User already exist!!!",
+                });
+            }
+
+            // Hash the password
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            // Insert user into the database
+            await usersCollection.insertOne({
+                username,
+                email,
+                password: hashedPassword,
+                role: "user",
+            });
+
+            res.status(201).json({
+                success: true,
+                message: "User registered successfully!",
+            });
+        });
+
+        // User Login
+        app.post("/login", async (req, res) => {
+            const { email, password } = req.body;
+
+            // Find user by email
+            const user = await usersCollection.findOne({ email });
+            if (!user) {
+                return res.status(401).json({ message: "Invalid email or password" });
+            }
+
+            // Compare hashed password
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            if (!isPasswordValid) {
+                return res.status(401).json({ message: "Invalid email or password" });
+            }
+
+            // Generate JWT token
+            const token = jwt.sign(
+                { email: user.email, role: user.role },
+                process.env.JWT_SECRET,
+                {
+                    expiresIn: process.env.EXPIRES_IN,
+                }
+            );
+
+            res.json({
+                success: true,
+                message: "User successfully logged in!",
+                accessToken: token,
+            });
+        });
 
         // Fetch flash sale products
         app.get('/flash-sale', async (req, res) => {
